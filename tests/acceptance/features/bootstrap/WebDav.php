@@ -1186,22 +1186,17 @@ trait WebDav {
 			}
 		}
 		if ($chunkingVersion === 'old') {
-			foreach ($chunks as $index => $chunk) {
+			foreach ($chunks as $index => $chunkContent) {
 				$this->userUploadsChunkedFile(
-					$user, $index + 1, \count($chunks), $chunk, $destination
+					$user, $index + 1, \count($chunks), $chunkContent, $destination
 				);
 			}
 		} else {
-			$id = 'chunking-43';
-			$this->userCreatesANewChunkingUploadWithId($user, $id);
-			foreach ($chunks as $index => $chunk) {
-				$this->userUploadsNewChunkFileOfWithToId(
-					$user, $index + 1, $chunk, $id
-				);
+			$chunkDetails = [];
+			foreach ($chunks as $index => $chunkContent) {
+				$chunkDetails[] = [$index + 1, $chunkContent];
 			}
-			$this->userMovesNewChunkFileWithIdToMychunkedfile(
-				$user, $id, $destination
-			);
+			$this->userUploadsChunksUsingNewChunking($user, $destination, 'chunking-43', $chunkDetails);
 		}
 	}
 
@@ -1564,9 +1559,24 @@ trait WebDav {
 	 * @return void
 	 */
 	public function userUploadsTheFollowingChunksUsingNewChunking($user, $file, TableNode $chunkDetails) {
-		$chunkingId = 'chunking-42';
+		$this->userUploadsChunksUsingNewChunking(
+			$user, $file, 'chunking-42', $chunkDetails->getTable()
+		);
+	}
+
+	/**
+	 * New style chunking upload
+	 *
+	 * @param string $user
+	 * @param string $file
+	 * @param string $chunkingId
+	 * @param array $chunkDetails
+	 *
+	 * @return void
+	 */
+	public function userUploadsChunksUsingNewChunking($user, $file, $chunkingId, $chunkDetails) {
 		$this->userCreatesANewChunkingUploadWithId($user, $chunkingId);
-		foreach ($chunkDetails->getTable() as $chunkDetail) {
+		foreach ($chunkDetails as $chunkDetail) {
 			$chunkNumber = $chunkDetail[0];
 			$chunkContent = $chunkDetail[1];
 			$this->userUploadsNewChunkFileOfWithToId($user, $chunkNumber, $chunkContent, $chunkingId);
